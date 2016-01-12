@@ -1,32 +1,21 @@
 package com.my.web.muesum;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
-import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Message;
-import android.provider.SyncStateContract;
+import android.os.Handler;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.webkit.HttpAuthHandler;
-import android.webkit.JavascriptInterface;
-import android.webkit.JsResult;
 import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.LinearLayout;
-import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -37,15 +26,25 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private static Context context;
     private RelativeLayout mWebViewContainer;
+    private Runnable mRunnable;
+    private Handler mHandler;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectDiskWrites()
+                .detectDiskReads()
+                .permitDiskReads()
+                .permitDiskWrites()
+                .permitNetwork()
+                .detectCustomSlowCalls()
+                .penaltyLog().build());
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        getSupportActionBar().hide();
+        //getSupportActionBar().hide();
         mWebViewContainer = (RelativeLayout)findViewById(R.id.mWebViewContainer);
 
         callChrome("http://www.muesum.co.kr/shop/main");
-        finish();
+
         /*
         webView = (WebView)findViewById(R.id.webView);
 
@@ -108,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
         Intent i = new Intent(Intent.ACTION_VIEW);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         i.setPackage(packageName); //바로 이 부분
-        i.setData(Uri.parse(url));
+        i.setData(Uri.parse("http://muesum.co.kr/shop/?app=android&appvar=" + ((myApplication) this.getApplication()).getRegGCMId()));
 
         //크롬브라우저가 설치되어있으면 호출, 없으면 마켓으로 설치유도
         List<ResolveInfo> activitiesList = getPackageManager().queryIntentActivities(i, -1);
@@ -120,6 +119,16 @@ public class MainActivity extends AppCompatActivity {
             playStoreIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(playStoreIntent);
         }
+
+        mRunnable = new Runnable(){
+            public void run() {
+                finish();
+            }
+        };
+        mHandler = new Handler();
+        mHandler.post(mRunnable); // Runnable 객체 실행
+        mHandler.postAtFrontOfQueue(mRunnable); // Runnable 객체를 Queue 맨앞에 할당
+        mHandler.postDelayed(mRunnable, 1000); // Runnable 객체를 1초 뒤에 실행
     }
     private ValueCallback<Uri> mUploadMessage;
     private final static int FILECHOOSER_RESULTCODE = 1;
